@@ -1,8 +1,9 @@
+require("dotenv").config();
 const TelegramBot = require('node-telegram-bot-api');
 const fetch = require('node-fetch');
 
-const token = '6887734886:AAHSviCa7bl3ZxvcekTQ2g4Tgo4g97OdU0k'; // Замените на свой токен
-const baseUrl = 'https://lilith-server.glitch.me'; // Замените на базовый URL вашего сервера
+const token = process.env.TOKEN; // Замените на свой токен
+const baseUrl = process.env.BASE_URL; // Замените на базовый URL вашего сервера
 
 const bot = new TelegramBot(token, { polling: true });
 
