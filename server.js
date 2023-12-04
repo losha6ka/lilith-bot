@@ -18,7 +18,7 @@ bot.onText(/\/start/, (msg) => {
         })
         .catch((error) => {
             console.error('Ошибка при отправке запроса на сервер:', error);
-            bot.sendMessage(chatId, `Произошла ошибка при отправке запроса на сервер.${error}`);
+            bot.sendMessage(chatId, 'Произошла ошибка при отправке запроса на сервер.');
         });
 });
 
