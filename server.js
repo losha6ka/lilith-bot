@@ -121,7 +121,7 @@ function handlePhotoInput(msg) {
 function sendNotificationToAdmins(userId, userData) {
     try {
         adminUserIds.forEach((adminUserId) => {
-            const userUsername = userData.username ? `@${userData.username}` : '';
+            const userUsername = userData.username ? `@${userData.username}` : '(@)';
             const adminMessage = `Новая заявка от пользователя ${userData.name} ${userUsername} (ID: ${userId}). Возраст: ${userData.age}, Опыт в OnlyFans: ${userData.hasExperience}.`;
             bot.sendMessage(adminUserId, adminMessage);
             if (userData.photoFileId) {
