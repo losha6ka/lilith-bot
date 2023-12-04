@@ -104,7 +104,7 @@ function handlePhotoInput(msg) {
         const fileId = photo.file_id;
         context.data.photoFileId = fileId;
         context.step++;
-        bot.sendMessage(chatId, 'Ваша заявка отправлена. Обратная связь - @lilith-agency');
+        bot.sendMessage(chatId, 'Ваша заявка отправлена. Обратная связь - @lilith_agency');
         sendNotificationToAdmins(userId, context.data);
         context.completed = true;
     } else {
@@ -122,10 +122,10 @@ function sendNotificationToAdmins(userId, userData) {
     try {
         adminUserIds.forEach((adminUserId) => {
             const userUsername = userData.username ? `@${userData.username}` : '(@)';
-            const adminMessage = `Новая заявка от пользователя ${userData.name} ${userUsername} (ID: ${userId}). Возраст: ${userData.age}, Опыт в OnlyFans: ${userData.hasExperience}.`;
+            const adminMessage = `Заявка от пользователя - ${userData.name} ${userUsername} (ID: ${userId}). Возраст: ${userData.age}, Опыт в OnlyFans: ${userData.hasExperience}.`;
             bot.sendMessage(adminUserId, adminMessage);
             if (userData.photoFileId) {
-                bot.sendPhoto(adminUserId, userData.photoFileId, { caption: 'Фото пользователя' });
+                bot.sendPhoto(adminUserId, userData.photoFileId, { caption: 'Фото модели' });
             }
         });
     } catch (error) {
