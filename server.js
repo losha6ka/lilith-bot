@@ -104,7 +104,7 @@ function handlePhotoInput(msg) {
         const fileId = photo.file_id;
         context.data.photoFileId = fileId;
         context.step++;
-        bot.sendMessage(chatId, 'Ваша заявка отправлена.');
+        bot.sendMessage(chatId, 'Ваша заявка отправлена. Обратная связь - @lilith-agency');
         sendNotificationToAdmins(userId, context.data);
         context.completed = true;
     } else {
