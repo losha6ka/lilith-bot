@@ -123,6 +123,9 @@ function sendNotificationToAdmins(userId, userData) {
         adminUserIds.forEach((adminUserId) => {
             const adminMessage = `Новая заявка от пользователя ${userData.name} (ID: ${userId}). Возраст: ${userData.age}, Опыт в OnlyFans: ${userData.hasExperience}.`;
             bot.sendMessage(adminUserId, adminMessage);
+            if (userData.photoFileId) {
+                bot.sendPhoto(adminUserId, userData.photoFileId, { caption: 'Фото пользователя' });
+            }
         });
     } catch (error) {
         console.error('Ошибка при отправке уведомления администраторам:', error);
