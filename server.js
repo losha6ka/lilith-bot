@@ -102,15 +102,22 @@ async function handleExperienceInput(response) {
     const userId = response.from.id;
     const context = userStates[userId] || { step: 0, data: {}, completed: false };
 
-    // Обрабатываем ответ пользователя
-    context.data.hasExperience = response.text;
-    context.step++;
-    await simulateTypingAndSendMessage(chatId, 'Теперь отправьте ваше фото.');
+    // Проверяем, что ответ пользователя - только текст
+    if (response.text) {
+        // Обрабатываем ответ пользователя
+        context.data.hasExperience = response.text;
+        context.step++;
 
-    const photoResponse = await waitForMessage(chatId, userId);
-    await handlePhotoInput(photoResponse);
+        await simulateTypingAndSendMessage(chatId, 'Теперь отправьте ваше фото.');
+        const photoResponse = await waitForMessage(chatId, userId);
+        await handlePhotoInput(photoResponse);
+    } else {
+        // Если ответ пользователя не является текстом, запрашиваем ответ еще раз
+        await simulateTypingAndSendMessage(chatId, 'Пожалуйста, введите текстовый ответ.');
+        const experienceResponse = await waitForMessage(chatId, userId);
+        await handleExperienceInput(experienceResponse);
+    }
 }
-
 async function handlePhotoInput(response) {
     const chatId = response.chat.id;
     const userId = response.from.id;
