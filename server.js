@@ -5,6 +5,12 @@ const adminUserIds = [709027639, 456141628];
 const bot = new TelegramBot(token, { polling: true });
 const userStates = {}; // Объект для хранения состояний пользователей
 
+// Добавьте функцию для эмуляции печати
+function simulateTyping(chatId) {
+    bot.sendChatAction(chatId, 'typing');
+}
+
+// Обработчик команды /start
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
@@ -12,6 +18,8 @@ bot.onText(/\/start/, (msg) => {
     // Проверяем, есть ли у пользователя контекст, если нет - создаем
     const context = userStates[userId] || { step: 0, data: {}, completed: false };
     userStates[userId] = context;
+
+    simulateTyping(chatId);
 
     switch (context.step) {
         case 0:
@@ -23,6 +31,7 @@ bot.onText(/\/start/, (msg) => {
                     context.data.name = msg.text;
                     context.step++;
 
+                    simulateTyping(chatId);
                     bot.sendMessage(chatId, `Отлично, ${context.data.name}! Теперь введите ваш возраст.`);
 
                     // Ожидаем ответа на второй вопрос
@@ -37,16 +46,18 @@ bot.onText(/\/start/, (msg) => {
     }
 });
 
-// Добавьте обработку других этапов по мере необходимости
-
+// Обработчик ввода возраста
 function handleAgeInput(msg) {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     const context = userStates[userId] || { step: 0, data: {}, completed: false };
 
+    simulateTyping(chatId);
+
     const age = parseInt(msg.text, 10);
 
     if (isNaN(age) || age < 0) {
+        simulateTyping(chatId);
         bot.sendMessage(chatId, 'Пожалуйста, введите корректный возраст.');
 
         // Возвращаемся на предыдущий шаг
@@ -57,6 +68,7 @@ function handleAgeInput(msg) {
     } else {
         context.data.age = age;
         context.step++;
+        simulateTyping(chatId);
         bot.sendMessage(chatId, 'Был ли у вас опыт работы на OnlyFans?');
 
         // Ожидаем ответа на третий вопрос
@@ -64,6 +76,7 @@ function handleAgeInput(msg) {
     }
 }
 
+// Обработчик ввода опыта работы на OnlyFans
 function handleExperienceInput(msg) {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
@@ -72,16 +85,20 @@ function handleExperienceInput(msg) {
     // Обрабатываем ответ пользователя
     context.data.hasExperience = msg.text;
     context.step++;
+    simulateTyping(chatId);
     bot.sendMessage(chatId, 'Теперь отправьте ваше фото.');
 
     // Ожидаем ответа на четвертый вопрос
     bot.once('message', handlePhotoInput);
 }
 
+// Обработчик ввода фото
 function handlePhotoInput(msg) {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     const context = userStates[userId] || { step: 0, data: {}, completed: false };
+
+    simulateTyping(chatId);
 
     // Обрабатываем ответ пользователя
     if (msg.photo && msg.photo.length > 0) {
@@ -89,10 +106,12 @@ function handlePhotoInput(msg) {
         const fileId = photo.file_id;
         context.data.photoFileId = fileId;
         context.step++;
+        simulateTyping(chatId);
         bot.sendMessage(chatId, `Ваша заявка отправлена.\nНапишите @llthmngr менеджеру номер своей заявки (№${userId}), и вам ответят в ближайшее время.`);
         sendNotificationToAdmins(userId, context.data);
         context.completed = true;
     } else {
+        simulateTyping(chatId);
         bot.sendMessage(chatId, 'Пожалуйста, отправьте фото.');
 
         // Возвращаемся на предыдущий шаг
@@ -103,6 +122,7 @@ function handlePhotoInput(msg) {
     }
 }
 
+// Отправка уведомления админам
 function sendNotificationToAdmins(userId, userData) {
     try {
         adminUserIds.forEach((adminUserId) => {
