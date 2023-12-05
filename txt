@@ -19,69 +19,97 @@ bot.onText(/\/start/, (msg) => {
 
             // Ожидаем ответа на первый вопрос
             bot.once('message', (msg) => {
-                // Если это первый вопрос, сохраняем ответ пользователя и переходим к следующему шагу
-                context.data.name = msg.text;
-                context.step++;
-                bot.sendMessage(chatId, `Отлично, ${context.data.name}! Теперь введите ваш возраст.`);
+                if (context && context.step === 0) {
+                    context.data.name = msg.text;
+                    context.step++;
 
-                // Ожидаем ответа на второй вопрос
-                bot.once('message', (msg) => {
-                    // Обрабатываем ответ пользователя
-                    const age = parseInt(msg.text, 10);
-                    if (isNaN(age) || age < 0) {
-                        bot.sendMessage(chatId, 'Пожалуйста, введите корректный возраст.');
-                    } else if (age < 18) {
-                        bot.sendMessage(chatId, 'Извините, но мы работаем только с совершеннолетними.');
-                        context.completed = true;
-                    } else {
-                        context.data.age = age;
-                        context.step++;
-                        bot.sendMessage(chatId, 'Есть ли у вас опыт работы в OnlyFans? (да/нет)');
+                    bot.sendMessage(chatId, `Отлично, ${context.data.name}! Теперь введите ваш возраст.`);
 
-                        // Ожидаем ответа на третий вопрос
-                        bot.once('message', (msg) => {
-                            // Обрабатываем ответ пользователя
-                            const hasExperience = msg.text.toLowerCase();
-                            if (hasExperience === 'да' || hasExperience === 'нет') {
-                                context.data.hasExperience = hasExperience;
-                                context.step++;
-                                bot.sendMessage(chatId, 'Теперь отправьте ваше фото.');
-
-                                // Ожидаем ответа на четвертый вопрос
-                                bot.once('message', (msg) => {
-                                    // Обрабатываем ответ пользователя
-                                    if (msg.photo && msg.photo.length > 0) {
-                                        const photo = msg.photo[0];
-                                        const fileId = photo.file_id;
-                                        context.data.photoFileId = fileId;
-                                        context.step++;
-                                        bot.sendMessage(chatId, 'Ваша заявка отправлена.');
-                                        sendNotificationToAdmins(userId, context.data);
-                                        context.completed = true;
-                                    } else {
-                                        bot.sendMessage(chatId, 'Пожалуйста, отправьте фото.');
-                                    }
-                                });
-                            } else {
-                                bot.sendMessage(chatId, 'Пожалуйста, ответьте "да" или "нет".');
-                            }
-                        });
-                    }
-                });
+                    // Ожидаем ответа на второй вопрос
+                    bot.once('message', handleAgeInput);
+                }
             });
             break;
 
         default:
-            // Обработка других этапов, если необходимо
+            // Если пользователь завершил цепочку, игнорируем сообщения
             break;
     }
 });
 
+// Добавьте обработку других этапов по мере необходимости
+
+function handleAgeInput(msg) {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const context = userStates[userId] || { step: 0, data: {}, completed: false };
+
+    const age = parseInt(msg.text, 10);
+
+    if (isNaN(age) || age < 0) {
+        bot.sendMessage(chatId, 'Пожалуйста, введите корректный возраст.');
+
+        // Возвращаемся на предыдущий шаг
+        context.step--;
+
+        // Ожидаем ответа на текущий вопрос
+        bot.once('message', handleAgeInput);
+    } else {
+        context.data.age = age;
+        context.step++;
+        bot.sendMessage(chatId, 'Был ли у вас опыт работы на OnlyFans?');
+
+        // Ожидаем ответа на третий вопрос
+        bot.once('message', handleExperienceInput);
+    }
+}
+
+function handleExperienceInput(msg) {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const context = userStates[userId] || { step: 0, data: {}, completed: false };
+
+    // Обрабатываем ответ пользователя
+    context.data.hasExperience = msg.text;
+    context.step++;
+    bot.sendMessage(chatId, 'Теперь отправьте ваше фото.');
+
+    // Ожидаем ответа на четвертый вопрос
+    bot.once('message', handlePhotoInput);
+}
+
+function handlePhotoInput(msg) {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const context = userStates[userId] || { step: 0, data: {}, completed: false };
+
+    // Обрабатываем ответ пользователя
+    if (msg.photo && msg.photo.length > 0) {
+        const photo = msg.photo[0];
+        const fileId = photo.file_id;
+        context.data.photoFileId = fileId;
+        context.step++;
+        bot.sendMessage(chatId, `Ваша заявка отправлена.\nНапишите @llthmngr менеджеру номер своей заявки (№${userId}), и вам ответят в ближайшее время.`);
+        sendNotificationToAdmins(userId, context.data);
+        context.completed = true;
+    } else {
+        bot.sendMessage(chatId, 'Пожалуйста, отправьте фото.');
+
+        // Возвращаемся на предыдущий шаг
+        context.step--;
+
+        // Ожидаем ответа на текущий вопрос
+        bot.once('message', handlePhotoInput);
+    }
+}
+
 function sendNotificationToAdmins(userId, userData) {
     try {
         adminUserIds.forEach((adminUserId) => {
-            const adminMessage = `Новая заявка от пользователя ${userData.name} (ID: ${userId}). Возраст: ${userData.age}, Опыт в OnlyFans: ${userData.hasExperience}.`;
+            const userUsername = userData.username ? `@${userData.username}` : '(@пусто)';
+            const adminMessage = `Заявка от пользователя - ${userData.name}, ${userUsername};\n(ID: ${userId});\nВозраст: ${userData.age};\nОпыт в OnlyFans: ${userData.hasExperience};`;
             bot.sendMessage(adminUserId, adminMessage);
+            bot.sendPhoto(adminUserId, userData.photoFileId, { caption: `Фото модели: ${userData.name}` });
         });
     } catch (error) {
         console.error('Ошибка при отправке уведомления администраторам:', error);
