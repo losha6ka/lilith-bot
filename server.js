@@ -8,6 +8,13 @@ const userStates = {};
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
+
+    // Проверяем, была ли уже отправлена заявка от пользователя
+    if (userStates[userId] && userStates[userId].completed) {
+        await bot.sendMessage(chatId, `Заявка "№${userId}" уже отправлена.\nОжидайте ответа.`);
+        return;
+    }
+
     const context = userStates[userId] || { step: 0, data: {}, completed: false };
     userStates[userId] = context;
 
@@ -23,7 +30,6 @@ bot.onText(/\/start/, async (msg) => {
             break;
     }
 });
-
 async function simulateTypingAndSendMessage(chatId, message) {
     const typingDuration = 1000; // Длительность симуляции в миллисекундах (1 секунда)
 
@@ -116,7 +122,7 @@ async function handlePhotoInput(response) {
         const fileId = photo.file_id;
         context.data.photoFileId = fileId;
         context.step++;
-        await simulateTypingAndSendMessage(chatId, `Ваша заявка отправлена.\nНапишите @llthmngr менеджеру номер своей заявки (№${userId}), и вам ответят в ближайшее время.`);
+        await simulateTypingAndSendMessage(chatId, `Ваша заявка отправлена.\nНапишите @llthmngr менеджеру номер своей заявки "№${userId}", и вам ответят в ближайшее время.`);
         await sendNotificationToAdmins(userId, context.data);
         context.completed = true;
     } else {
