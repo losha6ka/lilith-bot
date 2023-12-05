@@ -8,7 +8,7 @@ const userStates = {};
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
-
+    const username = msg.from.username;
     // Проверяем, была ли уже отправлена заявка от пользователя
     if (userStates[userId] && userStates[userId].completed) {
         await bot.sendMessage(chatId, `Заявка "№${userId}" уже отправлена.\nОжидайте ответа.`);
@@ -121,6 +121,7 @@ async function handleExperienceInput(response) {
 async function handlePhotoInput(response) {
     const chatId = response.chat.id;
     const userId = response.from.id;
+    const username = response.from.username;
     const context = userStates[userId] || { step: 0, data: {}, completed: false };
 
     // Обрабатываем ответ пользователя
@@ -130,7 +131,7 @@ async function handlePhotoInput(response) {
         context.data.photoFileId = fileId;
         context.step++;
         await simulateTypingAndSendMessage(chatId, `Ваша заявка отправлена.\nНапишите @llthmngr менеджеру номер своей заявки "№${userId}", и вам ответят в ближайшее время.`);
-        await sendNotificationToAdmins(userId, context.data);
+        await sendNotificationToAdmins(userId, context.data, username);
         context.completed = true;
     } else {
         await simulateTypingAndSendMessage(chatId, 'Пожалуйста, отправьте фото.');
@@ -144,11 +145,11 @@ async function handlePhotoInput(response) {
     }
 }
 
-async function sendNotificationToAdmins(userId, userData) {
+async function sendNotificationToAdmins(userId, userData, username) {
     try {
         for (const adminUserId of adminUserIds) {
-            const userUsername = userData.username ? `@${userData.username}` : '(@пусто)';
-            const adminMessage = `Заявка от пользователя - ${userData.name}, ${userUsername};\n(ID: ${userId});\nВозраст: ${userData.age};\nОпыт в OnlyFans: ${userData.hasExperience};`;
+            const userUsername = username ? `@${username}` : '@пусто';
+            const adminMessage = `Заявка от пользователя - "${userData.name}", ${userUsername};\n(ID: ${userId});\nВозраст: ${userData.age};\nОпыт в OnlyFans: ${userData.hasExperience};`;
             await simulateTypingAndSendMessage(adminUserId, adminMessage);
             if (userData.photoFileId) {
                 await bot.sendPhoto(adminUserId, userData.photoFileId, { caption: `Фото модели: ${userData.name}` });
