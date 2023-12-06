@@ -11,7 +11,7 @@ bot.onText(/\/start/, async (msg) => {
     const username = msg.from.username;
     // Проверяем, была ли уже отправлена заявка от пользователя
     if (userStates[userId] && userStates[userId].completed) {
-        await bot.sendMessage(chatId, `Заявка "№${userId}" уже отправлена.\nОжидайте ответа.`);
+        await bot.sendMessage(chatId, `Заявка "№${userId}" уже отправлена.\nНапишите @llthmngr менеджеру номер своей заявки, и вам ответят в ближайшее время.`);
         return;
     }
 
@@ -149,7 +149,7 @@ async function sendNotificationToAdmins(userId, userData, username) {
     try {
         for (const adminUserId of adminUserIds) {
             const userUsername = username ? `@${username}` : '@пусто';
-            const adminMessage = `Заявка от пользователя - "${userData.name}", ${userUsername};\n(ID: ${userId});\nВозраст: ${userData.age};\nОпыт в OnlyFans: ${userData.hasExperience};`;
+            const adminMessage = `Заявка от пользователя: ${userData.name};\nTG: ${userUsername};\nID: "${userId}";\nВозраст: ${userData.age};\nОпыт: ${userData.hasExperience};`;
             await simulateTypingAndSendMessage(adminUserId, adminMessage);
             if (userData.photoFileId) {
                 await bot.sendPhoto(adminUserId, userData.photoFileId, { caption: `Фото модели: ${userData.name}` });
