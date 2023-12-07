@@ -4,31 +4,47 @@ const token = process.env.TOKEN;
 const adminUserIds = [709027639, 456141628];
 const bot = new TelegramBot(token, { polling: true });
 const userStates = {};
-
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
-    const username = msg.from.username;
-    // Проверяем, была ли уже отправлена заявка от пользователя
     if (userStates[userId] && userStates[userId].completed) {
-        await bot.sendMessage(chatId, `Заявка "№${userId}" уже отправлена.\nНапишите @llthmngr менеджеру номер своей заявки, и вам ответят в ближайшее время.`);
+        await bot.sendMessage(chatId, 'Заявка № уже отправлена. Ожидайте ответа.');
         return;
     }
+    const languageKeyboard = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Русский', callback_data: 'ru' }],
+                [{ text: 'Українська', callback_data: 'ua' }],
+            ],
+        },
+    };
 
-    const context = userStates[userId] || { step: 0, data: {}, completed: false };
+    // Отправляем сообщение с инлайн-клавиатурой для выбора языка
+    await bot.sendMessage(chatId, 'Выберите язык | Оберіть мову', languageKeyboard);
+});
+bot.on('callback_query', async (callbackQuery) => {
+    const chatId = callbackQuery.message.chat.id;
+    const userId = callbackQuery.from.id;
+    const chosenLanguage = callbackQuery.data;
+
+    // Определяем выбранный язык и сохраняем его в контексте пользователя
+    const language = chosenLanguage === 'ru' ? 'ru' : 'ua';
+    const context = userStates[userId] || { step: 0, data: {}, completed: false, language };
     userStates[userId] = context;
 
-    switch (context.step) {
-        case 0:
-            await simulateTypingAndSendMessage(chatId, 'Привет! Как к вам обращаться?');
-            const nameResponse = await waitForMessage(chatId, userId);
-            await handleNameInput(nameResponse);
-            break;
+    // Продолжаем разговор
+    await bot.answerCallbackQuery(callbackQuery.id);
+    await bot.deleteMessage(chatId, callbackQuery.message.message_id);
 
-        default:
-            // Если пользователь завершил цепочку, игнорируем сообщения
-            break;
+    // Отправляем приветственное сообщение на выбранном языке
+    if (language === 'ru') {
+        await simulateTypingAndSendMessage(chatId, 'Привет! Как к вам обращаться?');
+    } else {
+        await simulateTypingAndSendMessage(chatId, 'Вітаємо! Як до вас звертатися?');
     }
+    const nameResponse = await waitForMessage(chatId, userId);
+    await handleNameInput(nameResponse);
 });
 async function simulateTypingAndSendMessage(chatId, message) {
     const typingDuration = 1000; // Длительность симуляции в миллисекундах (1 секунда)
@@ -44,7 +60,6 @@ async function simulateTypingAndSendMessage(chatId, message) {
     // Отправляем реальное сообщение после симуляции
     await bot.sendMessage(chatId, message);
 }
-
 async function waitForMessage(chatId, userId) {
     return new Promise((resolve) => {
         bot.on('message', (msg) => {
@@ -54,7 +69,6 @@ async function waitForMessage(chatId, userId) {
         });
     });
 }
-
 async function handleNameInput(response) {
     const chatId = response.chat.id;
     const userId = response.from.id;
@@ -62,15 +76,12 @@ async function handleNameInput(response) {
 
     context.data.name = response.text;
     context.step++;
-
-    await simulateTypingAndSendMessage(chatId, `Отлично, ${context.data.name}! Теперь введите ваш возраст.`);
+    const agePrompt = context.language === 'ru' ? `Отлично, ${context.data.name}! Теперь ведите ваш возраст.` : `Чудово, ${context.data.name}! Тепер введіть ваш вік.`;
+    await simulateTypingAndSendMessage(chatId, agePrompt);
 
     const ageResponse = await waitForMessage(chatId, userId);
     await handleAgeInput(ageResponse);
 }
-
-// Остальной код остается без изменений
-
 async function handleAgeInput(response) {
     const chatId = response.chat.id;
     const userId = response.from.id;
@@ -79,7 +90,8 @@ async function handleAgeInput(response) {
     const age = parseInt(response.text, 10);
 
     if (isNaN(age) || age < 0) {
-        await simulateTypingAndSendMessage(chatId, 'Пожалуйста, введите корректный возраст.');
+        const ageError = context.language === 'ru' ? "Пожалуйста, введите корректный возраст." : "Будь ласка, введіть коректний вік."
+        await simulateTypingAndSendMessage(chatId, ageError);
 
         // Возвращаемся на предыдущий шаг
         context.step--;
@@ -90,13 +102,13 @@ async function handleAgeInput(response) {
     } else {
         context.data.age = age;
         context.step++;
-        await simulateTypingAndSendMessage(chatId, 'Был ли у вас опыт работы на OnlyFans?');
+        const experiencePromt = context.language === 'ru' ? "Был ли у вас опыт работы на OnlyFans?" : "Чи був у вас досвід роботи на OnlyFans?"
+        await simulateTypingAndSendMessage(chatId, experiencePromt);
 
         const experienceResponse = await waitForMessage(chatId, userId);
         await handleExperienceInput(experienceResponse);
     }
 }
-
 async function handleExperienceInput(response) {
     const chatId = response.chat.id;
     const userId = response.from.id;
@@ -107,13 +119,13 @@ async function handleExperienceInput(response) {
         // Обрабатываем ответ пользователя
         context.data.hasExperience = response.text;
         context.step++;
-
-        await simulateTypingAndSendMessage(chatId, 'Теперь отправьте ваше фото.');
+        const photoPromt = context.language === 'ru' ? "Теперь отправьте ваше фото." : "Тепер надішліть ваше фото."
+        await simulateTypingAndSendMessage(chatId, photoPromt);
         const photoResponse = await waitForMessage(chatId, userId);
         await handlePhotoInput(photoResponse);
     } else {
-        // Если ответ пользователя не является текстом, запрашиваем ответ еще раз
-        await simulateTypingAndSendMessage(chatId, 'Пожалуйста, введите текстовый ответ.');
+        const experienceError = context.language === 'ru' ? "Пожалуйста, введите текстовый ответ." : "Будь ласка, введіть текстову відповідь."
+        await simulateTypingAndSendMessage(chatId, experienceError);
         const experienceResponse = await waitForMessage(chatId, userId);
         await handleExperienceInput(experienceResponse);
     }
@@ -130,11 +142,13 @@ async function handlePhotoInput(response) {
         const fileId = photo.file_id;
         context.data.photoFileId = fileId;
         context.step++;
-        await simulateTypingAndSendMessage(chatId, `Ваша заявка отправлена.\nНапишите @llthmngr менеджеру номер своей заявки "№${userId}", и вам ответят в ближайшее время.`);
+        const acceptPromt = context.language === 'ru' ? `Ваша заявка отправлена.\nНапишите @llthmngr менеджеру номер своей заявки "№${userId}", и вам ответят в ближайшее время.` : `Вашу заявку відправлено.\nНапишіть @llthmngr менеджеру номер своєї заявки "№${userId}", і вам дадуть відповідь найближчим часом.`
+        await simulateTypingAndSendMessage(chatId, acceptPromt);
         await sendNotificationToAdmins(userId, context.data, username);
         context.completed = true;
     } else {
-        await simulateTypingAndSendMessage(chatId, 'Пожалуйста, отправьте фото.');
+        const photoError = context.language === 'ru' ? "Пожалуйста, отправьте ваше фото." : "Будь ласка, надішліть ваше фото."
+        await simulateTypingAndSendMessage(chatId, photoError);
 
         // Возвращаемся на предыдущий шаг
         context.step--;
@@ -144,7 +158,6 @@ async function handlePhotoInput(response) {
         await handlePhotoInput(photoResponse);
     }
 }
-
 async function sendNotificationToAdmins(userId, userData, username) {
     try {
         for (const adminUserId of adminUserIds) {
@@ -152,7 +165,7 @@ async function sendNotificationToAdmins(userId, userData, username) {
             const adminMessage = `Заявка от пользователя: ${userData.name};\nTG: ${userUsername};\nID: "${userId}";\nВозраст: ${userData.age};\nОпыт: ${userData.hasExperience};`;
             await simulateTypingAndSendMessage(adminUserId, adminMessage);
             if (userData.photoFileId) {
-                await bot.sendPhoto(adminUserId, userData.photoFileId, { caption: `Фото модели: ${userData.name}` });
+                await bot.sendPhoto(adminUserId, userData.photoFileId, { caption: `Фото: ${userData.name}` });
             }
         }
     } catch (error) {
