@@ -8,20 +8,20 @@ bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     if (userStates[userId] && userStates[userId].completed) {
-        await bot.sendMessage(chatId, 'Заявка № уже отправлена. Ожидайте ответа.');
+        await bot.sendMessage(chatId, `Заявку №${userId} вже відправлено. Очікуйте відповіді.`);
         return;
     }
     const languageKeyboard = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: 'Русский', callback_data: 'ru' }],
                 [{ text: 'Українська', callback_data: 'ua' }],
+                [{ text: 'Русский', callback_data: 'ru' }],
             ],
         },
     };
 
     // Отправляем сообщение с инлайн-клавиатурой для выбора языка
-    await bot.sendMessage(chatId, 'Выберите язык | Оберіть мову', languageKeyboard);
+    await bot.sendMessage(chatId, 'Оберіть мову', languageKeyboard);
 });
 bot.on('callback_query', async (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
