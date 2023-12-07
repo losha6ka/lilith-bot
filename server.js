@@ -163,10 +163,10 @@ async function sendNotificationToAdmins(userId, userData, username) {
         for (const adminUserId of adminUserIds) {
             const userUsername = username ? `@${username}` : '@пусто';
             if (userData.photoFileId) {
-                await bot.sendPhoto(adminUserId, userData.photoFileId, { caption: `Заявка от пользователя: ${userData.name};\nTG: ${userUsername};\nID: "${userId}";\nВозраст: ${userData.age};\nОпыт: ${userData.hasExperience};` });
+                await bot.sendPhoto(adminUserId, userData.photoFileId, { caption: `Заявка від користувача: ${userData.name};\nTG: ${userUsername};\nID: "${userId}";\nВік: ${userData.age};\nДосвід: ${userData.hasExperience};` });
             }
         }
     } catch (error) {
-        console.error('Ошибка при отправке уведомления администраторам:', error);
+        console.error('Помилка під час надсилання повідомлення адміністраторам:', error);
     }
 }
