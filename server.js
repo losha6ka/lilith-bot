@@ -162,10 +162,8 @@ async function sendNotificationToAdmins(userId, userData, username) {
     try {
         for (const adminUserId of adminUserIds) {
             const userUsername = username ? `@${username}` : '@пусто';
-            const adminMessage = `Заявка от пользователя: ${userData.name};\nTG: ${userUsername};\nID: "${userId}";\nВозраст: ${userData.age};\nОпыт: ${userData.hasExperience};`;
-            await simulateTypingAndSendMessage(adminUserId, adminMessage);
             if (userData.photoFileId) {
-                await bot.sendPhoto(adminUserId, userData.photoFileId, { caption: `Фото: ${userData.name}` });
+                await bot.sendPhoto(adminUserId, userData.photoFileId, { caption: `Заявка от пользователя: ${userData.name};\nTG: ${userUsername};\nID: "${userId}";\nВозраст: ${userData.age};\nОпыт: ${userData.hasExperience};` });
             }
         }
     } catch (error) {
