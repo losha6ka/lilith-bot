@@ -8,7 +8,7 @@ bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     if (userStates[userId] && userStates[userId].completed) {
-        await bot.sendMessage(chatId, `Заявку №${userId} вже відправлено. Очікуйте відповіді.`);
+        await bot.sendMessage(chatId, `Заявку вже відправлено.\nНапишіть @llthmngr менеджеру номер своєї заявки "№${userId}", і вам дадуть відповідь найближчим часом.`);
         return;
     }
     const languageKeyboard = {
